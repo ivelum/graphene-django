@@ -1,7 +1,14 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from graphene_django.compat import get_choices_as_callable, get_choices_as_class
+
 CHOICES = ((1, "this"), (2, _("that")))
+
+
+class TypedChoice(models.IntegerChoices):
+    CHOICE_THIS = 1
+    CHOICE_THAT = 2
 
 
 class Person(models.Model):
@@ -51,6 +58,15 @@ class Reporter(models.Model):
     email = models.EmailField()
     pets = models.ManyToManyField("self")
     a_choice = models.IntegerField(choices=CHOICES, null=True, blank=True)
+    typed_choice = models.IntegerField(
+        choices=TypedChoice.choices, null=True, blank=True
+    )
+    class_choice = models.IntegerField(
+        choices=get_choices_as_class(TypedChoice), null=True, blank=True
+    )
+    callable_choice = models.IntegerField(
+        choices=get_choices_as_callable(TypedChoice), null=True, blank=True
+    )
     objects = models.Manager()
     doe_objects = DoeReporterManager()
     fans = models.ManyToManyField(Person)

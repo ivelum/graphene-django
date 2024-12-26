@@ -25,7 +25,7 @@ from ..converter import (
 )
 from ..registry import Registry
 from ..types import DjangoObjectType
-from .models import Article, Film, FilmDetails, Reporter
+from .models import Article, Film, FilmDetails, Reporter, TypedChoice
 
 # from graphene.core.types.custom_scalars import DateTime, Time, JSONString
 
@@ -474,4 +474,45 @@ def test_choice_enum_blank_value():
     assert not result.errors
     assert result.data == {
         "reporter": {"firstName": "Bridget", "aChoice": None},
+    }
+
+
+def test_typed_choice_value():
+    """Test that choice fields with blank values work"""
+
+    class ReporterType(DjangoObjectType):
+        class Meta:
+            model = Reporter
+            fields = ("typed_choice", "class_choice", "callable_choice")
+
+    class Query(graphene.ObjectType):
+        reporter = graphene.Field(ReporterType)
+
+        def resolve_reporter(root, info):
+            return Reporter(
+                typed_choice=TypedChoice.CHOICE_THIS,
+                class_choice=TypedChoice.CHOICE_THAT,
+                callable_choice=TypedChoice.CHOICE_THIS,
+            )
+
+    schema = graphene.Schema(query=Query)
+
+    result = schema.execute(
+        """
+        query {
+            reporter {
+                typedChoice
+                classChoice
+                callableChoice
+            }
+        }
+    """
+    )
+    assert not result.errors
+    assert result.data == {
+        "reporter": {
+            "typedChoice": "A_1",
+            "classChoice": "A_2",
+            "callableChoice": "A_1",
+        },
     }
